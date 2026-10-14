@@ -109,7 +109,8 @@ const logout = async (req, res) => {
 };
 
 const getMe = async (req, res) => {
-  return res.status(200).json({ success: true, data: req.user });
+  const { id, email, role } = req.user;
+  return res.status(200).json({ success: true, data: { id, email, role } });
 };
 
 module.exports = { register, login, refresh, logout, getMe };
