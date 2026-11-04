@@ -52,13 +52,22 @@ psql "$DATABASE_URL" -f server/migrations/002_inventory_and_roles.sql
 
 Migration 002 converts existing `admin` users to `OWNER`, other existing users to `EMPLOYEE`, and creates categories, products, stock_transactions, and expired_logs.
 
+## First OWNER account (development setup)
+Registration intentionally creates an `EMPLOYEE` account. After registering the designated owner account, promote it once using a database administrator connection:
+```sql
+UPDATE users
+SET role = 'OWNER'
+WHERE email = 'owner@example.com';
+```
+Then log in again so the newly issued access token contains the updated role. Replace the example email with the actual owner account email. Do not add a public registration field that lets anyone choose OWNER.
+
 ## Test
 From the server directory:
 ```bash
 npm test -- --runInBand
 ```
 
-The report tests cover missing authentication, role restrictions, dashboard metrics, pagination validation, date validation, and filtered stock history.
+The GitHub Actions Backend CI run for this branch completed successfully. Tests cover missing authentication, role restrictions, dashboard metrics, pagination validation, date validation, and filtered stock history.
 
-## Notes
-This branch continues the repository's existing Express + PostgreSQL + JWT implementation. The lecturer's supplied backend guide describes Supabase, Supabase Auth, and RLS. The team must confirm whether the instructor approved the Express/JWT alternative before presenting it as the final project architecture.
+## Architecture note
+This branch continues the repository's existing Express + PostgreSQL + JWT implementation. The lecturer's supplied backend guide describes Supabase, Supabase Auth, and RLS. This is an unresolved architecture difference. The team should get confirmation from the lecturer before presenting this Express/JWT branch as fully compliant with the supplied guide.
