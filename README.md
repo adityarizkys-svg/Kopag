@@ -1,31 +1,33 @@
-# Kopag
+# Kopag – Expired Stock Management System
+
+Backend progress is developed in the `server/` directory using the repository's current Express + PostgreSQL + JWT implementation.
 
 ## Setup Backend
 
 ### Requirements
 - Node.js and npm
 - PostgreSQL
-- `psql` available in your terminal to apply the migration
+- `psql` available in terminal
 
 ### 1. Install dependencies
 ```powershell
 cd server
 npm install
-cd ..
 ```
 
 ### 2. Configure environment
-From the repository root, copy the example file and update its values:
-```powershell
-Copy-Item server/.env.example server/.env
-```
+Copy `.env.example` to `.env` inside the `server` directory and set:
+- `DATABASE_URL`
+- `JWT_SECRET` (use a long, random value)
+- `CORS_ORIGIN` (frontend origin)
 
-Set `DATABASE_URL` to your PostgreSQL connection string and replace `JWT_SECRET` with a long, random secret. Keep `.env` private and do not commit it.
+Never commit `.env`.
 
-### 3. Create the database schema
-Create a PostgreSQL database, then run the initial migration from the repository root:
+### 3. Create database schema
+Run both migrations from the repository root, in this order:
 ```powershell
 psql "postgresql://username:password@localhost:5432/database_name" -f server/migrations/001_initial_schema.sql
+psql "postgresql://username:password@localhost:5432/database_name" -f server/migrations/002_inventory_and_roles.sql
 ```
 
 ### 4. Start the backend
@@ -34,12 +36,18 @@ cd server
 npm run dev
 ```
 
-The API listens on `http://localhost:5000` by default. Check it at `GET /api/v1/health`.
+Health check: `GET http://localhost:5000/api/v1/health`
 
-### Run tests
+### 5. Run tests
 ```powershell
-cd server
 npm test -- --runInBand
 ```
 
-See [docs/api_specification.md](docs/api_specification.md) for the available endpoints.
+## Progress 8 – Reports
+- `GET /api/v1/reports/dashboard` – OWNER-only dashboard counts.
+- `GET /api/v1/reports/stock-history` – OWNER-only paginated stock history with optional filters.
+
+See [Progress 8 report documentation](docs/progress-8-reports.md) and [API specification](docs/api_specification.md).
+
+## Architecture note
+The lecturer-provided guide supplied with this project describes Supabase, Supabase Auth, and RLS. The checked-in backend is currently Express + PostgreSQL + JWT. The team should confirm this architecture choice with the lecturer before claiming it fully matches the guide.

@@ -2,99 +2,67 @@
 
 **Base URL:** `http://localhost:5000/api/v1`
 
-All request bodies use JSON. Error responses have the shape `{ "success": false, "message": "..." }`.
+All request bodies use JSON. Error responses use `{ "success": false, "message": "..." }`.
 
 ## Health Check
-
 `GET /health` requires no authentication.
 
-**200**
-```json
-{
-  "success": true,
-  "message": "Server is running",
-  "timestamp": "2026-10-14T12:00:00.000Z"
-}
-```
+## Authentication
+- `POST /auth/register` – register an EMPLOYEE account; body: `email`, `password`, `fullName`.
+- `POST /auth/login` – authenticate and return user, access token, and refresh token.
+- `POST /auth/refresh` – exchange a valid stored refresh token for a new access token.
+- `POST /auth/logout` – revoke the supplied refresh token.
+- `GET /auth/me` – return the current authenticated user; requires Bearer access token.
 
-## Register
-
-`POST /auth/register`
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "fullName": "John Doe"
-}
-```
-
-**201** returns the created user in `data`, including `id`, `email`, `full_name`, `role`, and `created_at`.
-
-- **400** A required field is missing, the email format is invalid, or the password has fewer than 8 characters.
-- **409** The email is already registered.
-
-## Login
-
-`POST /auth/login`
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**200**
+A successful login response has the following structure:
 ```json
 {
   "success": true,
   "message": "Login berhasil",
   "data": {
-    "user": {
-      "id": 1,
-      "email": "user@example.com",
-      "fullName": "John Doe",
-      "role": "user"
-    },
+    "user": { "id": 1, "email": "owner@example.com", "fullName": "Owner", "role": "OWNER" },
     "accessToken": "eyJ...",
     "refreshToken": "eyJ..."
   }
 }
 ```
 
-- **400** Email or password is missing.
-- **401** Email or password is incorrect.
+## Reports
 
-## Refresh Token
+Both report endpoints require an access token and the `OWNER` role.
 
-`POST /auth/refresh` accepts a refresh token that is present in the database and has not expired.
+### Dashboard
+`GET /reports/dashboard`
 
+Returns:
 ```json
-{ "refreshToken": "eyJ..." }
+{
+  "success": true,
+  "message": "Laporan dashboard berhasil diambil",
+  "data": {
+    "totalProducts": 12,
+    "totalStock": 250,
+    "layakJual": 8,
+    "mendekatiExpired": 3,
+    "expired": 1
+  }
+}
 ```
 
-- **200** `{ "success": true, "data": { "accessToken": "eyJ..." } }`
-- **400** Refresh token is missing.
-- **401** Refresh token is invalid, expired, or not found.
+### Stock history
+`GET /reports/stock-history`
 
-## Logout
+Optional query parameters:
+- `page`: positive integer; default 1.
+- `limit`: integer 1–100; default 10.
+- `type`: `IN` or `OUT`.
+- `productId`: positive integer.
+- `from`, `to`: valid `YYYY-MM-DD` dates; both ends are inclusive.
 
-`POST /auth/logout` deletes the supplied refresh token. The endpoint succeeds if the token is omitted.
+Example:
+`GET /reports/stock-history?page=1&limit=10&type=IN&from=2026-11-01&to=2026-11-04`
 
-```json
-{ "refreshToken": "eyJ..." }
-```
+Response data contains `items` and `pagination` (`page`, `limit`, `total`, `totalPages`).
 
-**200** `{ "success": true, "message": "Logout berhasil" }`
-
-## Current User
-
-`GET /auth/me` requires an access token in the `Authorization` header:
-
-```text
-Authorization: Bearer <accessToken>
-```
-
-- **200** `{ "success": true, "data": { "id": 1, "email": "user@example.com", "role": "user" } }`
-- **401** The token is missing, invalid, or expired.
+## Authorization
+Roles are `OWNER` and `EMPLOYEE`. Product and stock permissions must also be enforced by their respective routes when those modules are implemented.
