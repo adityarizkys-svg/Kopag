@@ -11,7 +11,8 @@ const saveRefreshToken = async ({ userId, token, expiresAt }) => {
 };
 
 const findRefreshToken = async (token) => {
-  const query = 'SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()';
+  const query =
+    'SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()';
   const result = await pool.query(query, [token]);
   return result.rows[0];
 };

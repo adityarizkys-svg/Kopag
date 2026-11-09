@@ -1,0 +1,239 @@
+### ============================================================
+### KOPAG API - REST Client Test File
+### Base URL: http://localhost:5000/api/v1
+### ============================================================
+
+@baseUrl = http://localhost:5000/api/v1
+@contentType = application/json
+
+# ─────────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────────
+
+### 1. Register (owner)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "fullName": "Admin Owner",
+  "email": "owner@kopag.com",
+  "password": "password123"
+}
+
+### 2. Login
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "owner@kopag.com",
+  "password": "password123"
+}
+
+### 3. Get Profile (Me)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 4. Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{loginRequest.response.body.$.data.refreshToken}}"
+}
+
+### 5. Logout
+POST {{baseUrl}}/auth/logout
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{loginRequest.response.body.$.data.refreshToken}}"
+}
+
+# ─────────────────────────────────────────────
+# CATEGORIES  (owner only)
+# ─────────────────────────────────────────────
+
+### 6. Get All Categories
+GET {{baseUrl}}/categories
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 7. Get Category by ID
+GET {{baseUrl}}/categories/1
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 8. Create Category
+POST {{baseUrl}}/categories
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "name": "Makanan & Minuman",
+  "description": "Produk makanan dan minuman kemasan"
+}
+
+### 9. Update Category
+PUT {{baseUrl}}/categories/1
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "name": "Makanan & Minuman",
+  "description": "Deskripsi diperbarui"
+}
+
+### 10. Delete Category
+DELETE {{baseUrl}}/categories/1
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+# ─────────────────────────────────────────────
+# PRODUCTS  (GET: owner+employee | CUD: owner)
+# ─────────────────────────────────────────────
+
+### 11. Get All Products
+GET {{baseUrl}}/products
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 12. Get Products - Filter by Status
+GET {{baseUrl}}/products?status=MENDEKATI_EXPIRED
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 13. Get Products - Filter by Category & Search
+GET {{baseUrl}}/products?category_id=1&search=susu
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 14. Get Product by ID
+GET {{baseUrl}}/products/1
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 15. Create Product (LAYAK_JUAL - expired date far)
+POST {{baseUrl}}/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "name": "Susu UHT Full Cream",
+  "category_id": 1,
+  "description": "Susu UHT 1 liter",
+  "unit": "Liter",
+  "quantity": 50,
+  "expired_date": "2027-06-30"
+}
+
+### 16. Create Product (MENDEKATI_EXPIRED - within 30 days)
+POST {{baseUrl}}/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "name": "Roti Tawar Gandum",
+  "category_id": 1,
+  "description": "Roti tawar gandum 400g",
+  "unit": "Pcs",
+  "quantity": 20,
+  "expired_date": "2026-11-25"
+}
+
+### 17. Create Product (EXPIRED)
+POST {{baseUrl}}/products
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "name": "Kerupuk Udang Lama",
+  "category_id": 1,
+  "description": "Stok lama",
+  "unit": "Pcs",
+  "quantity": 10,
+  "expired_date": "2026-10-01"
+}
+
+### 18. Update Product
+PUT {{baseUrl}}/products/1
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "description": "Susu UHT 1 liter - stok baru",
+  "quantity": 60
+}
+
+### 19. Delete Product
+DELETE {{baseUrl}}/products/1
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+# ─────────────────────────────────────────────
+# TRANSACTIONS  (owner + employee)
+# ─────────────────────────────────────────────
+
+### 20. Stock In
+POST {{baseUrl}}/transactions/stock-in
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "product_id": 1,
+  "quantity": 10,
+  "notes": "Restock dari supplier"
+}
+
+### 21. Stock Out (normal)
+POST {{baseUrl}}/transactions/stock-out
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "product_id": 1,
+  "quantity": 5,
+  "notes": "Penjualan ke pelanggan"
+}
+
+### 22. Stock Out (should FAIL - expired product)
+POST {{baseUrl}}/transactions/stock-out
+Content-Type: {{contentType}}
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+{
+  "product_id": 3,
+  "quantity": 2,
+  "notes": "Ini harus gagal karena produk EXPIRED"
+}
+
+### 23. Get Transaction History
+GET {{baseUrl}}/transactions
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 24. Get Transactions - Filter by Type & Date Range
+GET {{baseUrl}}/transactions?type=stock_out&start_date=2026-11-01&end_date=2026-11-30
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 25. Get Transaction by ID
+GET {{baseUrl}}/transactions/1
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+# ─────────────────────────────────────────────
+# REPORTS  (owner only)
+# ─────────────────────────────────────────────
+
+### 26. Summary Report
+GET {{baseUrl}}/reports/summary
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 27. Expired & Near-Expired Products Report
+GET {{baseUrl}}/reports/expired
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 28. Transaction Report (all)
+GET {{baseUrl}}/reports/transactions
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+### 29. Transaction Report (date range)
+GET {{baseUrl}}/reports/transactions?start_date=2026-11-01&end_date=2026-11-30
+Authorization: Bearer {{loginRequest.response.body.$.data.accessToken}}
+
+# ─────────────────────────────────────────────
+# HEALTH CHECK
+# ─────────────────────────────────────────────
+
+### 30. Health Check
+GET {{baseUrl}}/health
